@@ -165,7 +165,6 @@ void loop() {
       std::string rxValue = pCharacteristic_2->getValue();
       Serial.print("Characteristic 2 (getValue Temperature): ");
       Serial.println(rxValue.c_str());
-      
 
       // Here the value is written to the Client using setValue();
       // String txValue = "String with random value from Server: " + String(random(1000));
