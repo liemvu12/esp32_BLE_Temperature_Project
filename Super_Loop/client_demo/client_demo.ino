@@ -6,11 +6,9 @@ NimBLERemoteCharacteristic *pCharacteristic;
 NimBLERemoteService *pService;
 NimBLEClient *pClient;
 
-// Potentiometer is connected to GPIO 34 (Analog ADC1_CH6) 
-const int potPin = 34;
-
-// variable for storing the potentiometer value
-int potValue = 0;
+#define ADC_VREF_mV    3300.0 // in millivolt
+#define ADC_RESOLUTION 4096.0
+#define PIN_LM35       34 // ESP32 pin GPIO36 (ADC0) connected to LM35
 
 void setup() {
     Serial.begin(115200); // Khởi tạo UART với baud rate 115200
@@ -49,11 +47,15 @@ void setup() {
 
 void loop() {
     // Reading potentiometer value
-    potValue = analogRead(potPin);
-    std::string strpotValue = std::to_string(potValue);
-    Serial.println(potValue);
-    if (pCharacteristic != nullptr) {
-        pCharacteristic->writeValue(strpotValue);
-    }
-    delay(500);
+  int adcVal = analogRead(PIN_LM35);
+  // convert the ADC value to voltage in millivolt
+  float milliVolt = adcVal * (ADC_VREF_mV / ADC_RESOLUTION);
+  // convert the voltage to the temperature in °C
+  float tempC = milliVolt / 10;    
+  std::string strpotValue = std::to_string(tempC);
+  Serial.println(tempC);
+  if (pCharacteristic != nullptr) {
+      pCharacteristic->writeValue(strpotValue);
+  }
+  delay(500);
 }

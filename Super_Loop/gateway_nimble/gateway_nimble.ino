@@ -1,5 +1,13 @@
 #include <NimBLEDevice.h>
 #include <string.h>
+#include <HTTPClient.h>
+#include <WiFi.h>
+
+const char* ssid = "iPhone của Liêm";
+const char* password = "25122001";
+
+String urlThingspeak = "https://api.thingspeak.com/update?api_key=J9KX9YJMWBO7T32X" ;
+WiFiClient wifiClient;
 
 NimBLEServer *pServer;
 NimBLEService *pService;
@@ -68,6 +76,27 @@ class MyCallbacks: public NimBLECharacteristicCallbacks {
   }
 };
 
+String httpGETRequest(const char* Url)
+{
+  HTTPClient http;
+  http.begin(Url);
+  int responseCode = http.GET();
+  String responseBody = "{}";
+  if(responseCode > 0)
+  {
+    Serial.print("responseCode:");
+    Serial.println(responseCode);
+    responseBody = http.getString();
+  }
+  else
+  {
+    Serial.print("Error Code: ");
+    Serial.println(responseCode);
+  }
+  http.end();
+  return responseBody;
+}
+
 
 
 void setup() {
@@ -78,6 +107,18 @@ void setup() {
   for (int i = 0; i < 10; i++) {
     dataTemperatures[i] = DataTemperature(NimBLEAddress(), "");
   }
+
+  //setup wifi
+  WiFi.begin(ssid,password);
+  Serial.println("conecting");
+  while(WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.print("Connected to WiFi network with IP Address: ");
+  Serial.println(WiFi.localIP());
 
   NimBLEDevice::init("NimBLE");
 
@@ -98,14 +139,21 @@ void setup() {
 }
 
 void loop() {
+  String DataSend ="";
   for (int i = 0; i < 10; i++) {
     if (dataTemperatures[i].FlagDataSend == true) {
       dataTemperatures[i].FlagDataSend = false;
+
+      DataSend = DataSend + "&field" + String(i) + dataTemperatures[i].data.c_str();
+
       // In ra địa chỉ MAC và dữ liệu nhiệt độ
       Serial.print(dataTemperatures[i].clientAddress.toString().c_str());
       Serial.print(" dataTemperatures: ");
       Serial.println(dataTemperatures[i].data.c_str());
     }
   }
+  String Url = urlThingspeak + DataSend;
+  httpGETRequest(Url.c_str());
+  delay(1000);
 }
 
